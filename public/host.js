@@ -113,12 +113,17 @@ async function fetchState() {
     const res = await fetch('/api/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ votes: maxKnownVotes })
+      body: JSON.stringify({ status: currentStatus, votes: maxKnownVotes })
     });
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.state) {
         const state = data.state;
+        
+        if (currentStatus === 'active' && state.status === 'idle') {
+          state.status = 'active';
+        }
+
         if (state.status !== 'idle') {
           state.votes.defense = Math.max(maxKnownVotes.defense, state.votes.defense);
           state.votes.prosecution = Math.max(maxKnownVotes.prosecution, state.votes.prosecution);
@@ -315,9 +320,14 @@ async function postAdminCommand(endpoint) {
       verdictDismissed = false;
       maxKnownVotes = { defense: 0, prosecution: 0 };
       lastKnownVotes = { defense: 0, prosecution: 0 };
+      currentStatus = 'idle';
       latestState = null;
     } else if (endpoint === 'start') {
       verdictDismissed = false;
+      currentStatus = 'active';
+    } else if (endpoint === 'end') {
+      verdictDismissed = false;
+      currentStatus = 'ended';
     }
     const response = await fetch(`/api/admin/${endpoint}`, { method: 'POST' });
     const data = await response.json();

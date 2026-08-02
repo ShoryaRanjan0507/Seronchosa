@@ -103,7 +103,12 @@ app.get('/api/state', async (req, res) => {
 });
 
 app.post('/api/sync', async (req, res) => {
-  const { votes, status } = req.body || {};
+  const { status, votes } = req.body || {};
+  
+  if (status === 'active' && pollState.status !== 'ended') {
+    pollState.status = 'active';
+  }
+
   if (pollState.status === 'active' && votes) {
     if (typeof votes.defense === 'number') {
       pollState.votes.defense = Math.max(pollState.votes.defense, votes.defense);
@@ -112,6 +117,7 @@ app.post('/api/sync', async (req, res) => {
       pollState.votes.prosecution = Math.max(pollState.votes.prosecution, votes.prosecution);
     }
   }
+
   const state = await getFullState(req);
   res.json({ success: true, state });
 });
