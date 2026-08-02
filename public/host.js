@@ -61,7 +61,7 @@ audioToggle.addEventListener('click', () => {
     audioToggle.style.borderColor = 'var(--gold)';
     window.audio.playBeep();
   } else {
-    audioToggle.textContent = '🔇 SOUND OFF';
+    audioToggle.textContent = '🔇 SFX OFF';
     audioToggle.style.borderColor = 'var(--border-color)';
   }
   window.audio.isMuted = !audioEnabled;
@@ -125,7 +125,8 @@ async function syncStateWithServer() {
       status: latestState.status,
       names: latestState.names,
       votes: latestState.votes,
-      winner: latestState.winner
+      winner: latestState.winner,
+      lastVotedSide: latestState.lastVotedSide
     } : {};
 
     const res = await fetch('/api/sync', {
@@ -216,21 +217,21 @@ function displayVerdict(winner, defVotes, prosVotes) {
   const defName = latestState && latestState.names ? latestState.names.defense : 'Defense';
   const prosName = latestState && latestState.names ? latestState.names.prosecution : 'Prosecution';
 
-  if (winner === 'prosecution') {
+  let effectiveWinner = winner;
+  if (effectiveWinner === 'draw') {
+    effectiveWinner = (latestState && latestState.lastVotedSide) ? latestState.lastVotedSide : 'defense';
+  }
+
+  if (effectiveWinner === 'prosecution') {
     verdictStamp.textContent = 'GUILTY';
     verdictStamp.className = 'verdict-stamp verdict-guilty';
     winnerName.textContent = `${prosName.toUpperCase()} WINS!`;
     winnerName.style.color = 'var(--prosecution-text)';
-  } else if (winner === 'defense') {
+  } else {
     verdictStamp.textContent = 'NOT GUILTY';
     verdictStamp.className = 'verdict-stamp verdict-notguilty';
     winnerName.textContent = `${defName.toUpperCase()} WINS!`;
     winnerName.style.color = 'var(--defense-text)';
-  } else {
-    verdictStamp.textContent = 'MISTRIAL';
-    verdictStamp.className = 'verdict-stamp verdict-draw';
-    winnerName.textContent = 'TIE / MISTRIAL';
-    winnerName.style.color = 'var(--gold)';
   }
 
   winnerCounts.textContent = `${defName.toUpperCase()}: ${defVotes} VOTES | ${prosName.toUpperCase()}: ${prosVotes} VOTES`;

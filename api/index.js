@@ -24,6 +24,7 @@ let pollState = {
     defense: 0
   },
   winner: null,
+  lastVotedSide: null,
   names: {
     defense: 'Defense',
     prosecution: 'Prosecution'
@@ -102,12 +103,15 @@ app.get('/api/state', async (req, res) => {
 });
 
 app.post('/api/sync', async (req, res) => {
-  const { status, names, votes, winner } = req.body || {};
+  const { status, names, votes, winner, lastVotedSide } = req.body || {};
   if (status && status !== 'idle') {
     pollState.status = status;
   }
   if (winner) {
     pollState.winner = winner;
+  }
+  if (lastVotedSide) {
+    pollState.lastVotedSide = lastVotedSide;
   }
   if (names) {
     if (names.defense) pollState.names.defense = names.defense;
@@ -140,7 +144,7 @@ app.post('/api/admin/end', async (req, res) => {
   } else if (defense > prosecution) {
     pollState.winner = 'defense';
   } else {
-    pollState.winner = 'draw';
+    pollState.winner = pollState.lastVotedSide || 'defense';
   }
   const state = await getFullState(req);
   broadcast({ type: 'state', state });
@@ -152,6 +156,7 @@ app.post('/api/admin/reset', async (req, res) => {
   pollState.votes.prosecution = 0;
   pollState.votes.defense = 0;
   pollState.winner = null;
+  pollState.lastVotedSide = null;
   pollState.names.defense = 'Defense';
   pollState.names.prosecution = 'Prosecution';
   votedSessions.clear();
@@ -187,13 +192,15 @@ app.post('/api/vote', (req, res) => {
   }
 
   pollState.votes[side]++;
+  pollState.lastVotedSide = side;
   votedSessions.add(sessionId);
   votedIPs.add(clientIP);
 
   broadcast({
     type: 'vote_cast',
     votes: pollState.votes,
-    side: side
+    side: side,
+    lastVotedSide: side
   }, req);
 
   res.json({ success: true, votes: pollState.votes });

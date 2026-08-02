@@ -134,21 +134,21 @@ function handleStateChange(state) {
     const defName = state.names ? state.names.defense : 'Defense';
     const prosName = state.names ? state.names.prosecution : 'Prosecution';
 
-    if (state.winner === 'prosecution') {
+    let effectiveWinner = state.winner;
+    if (effectiveWinner === 'draw') {
+      effectiveWinner = state.lastVotedSide || 'defense';
+    }
+
+    if (effectiveWinner === 'prosecution') {
       mobileVerdictStamp.textContent = 'GUILTY';
       mobileVerdictStamp.className = 'verdict-stamp verdict-guilty';
       mobileWinnerName.textContent = `${prosName.toUpperCase()} WINS!`;
       mobileWinnerName.style.color = 'var(--prosecution-text)';
-    } else if (state.winner === 'defense') {
+    } else {
       mobileVerdictStamp.textContent = 'NOT GUILTY';
       mobileVerdictStamp.className = 'verdict-stamp verdict-notguilty';
       mobileWinnerName.textContent = `${defName.toUpperCase()} WINS!`;
       mobileWinnerName.style.color = 'var(--defense-text)';
-    } else {
-      mobileVerdictStamp.textContent = 'MISTRIAL';
-      mobileVerdictStamp.className = 'verdict-stamp verdict-draw';
-      mobileWinnerName.textContent = 'TIE / MISTRIAL';
-      mobileWinnerName.style.color = 'var(--gold)';
     }
     
     const def = state.votes.defense;
