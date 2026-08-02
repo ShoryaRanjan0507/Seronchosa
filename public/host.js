@@ -2,6 +2,7 @@ let socket;
 let currentStatus = 'idle';
 let pollingTimer = null;
 let lastKnownVotes = { defense: 0, prosecution: 0 };
+let verdictDismissed = false;
 
 const statusIndicator = document.getElementById('statusIndicator');
 const defenseCount = document.getElementById('defenseCount');
@@ -32,6 +33,7 @@ const verdictStamp = document.getElementById('verdictStamp');
 const winnerName = document.getElementById('winnerName');
 const winnerCounts = document.getElementById('winnerCounts');
 const btnCloseVerdict = document.getElementById('btnCloseVerdict');
+const btnResetVerdict = document.getElementById('btnResetVerdict');
 
 let audioEnabled = false;
 
@@ -195,6 +197,7 @@ function updateUI(state) {
   }
 
   if (state.status === 'idle') {
+    verdictDismissed = false;
     statusIndicator.textContent = pollingTimer ? 'COURT IN SESSION (POLLING)' : 'COURT IN SESSION';
     statusIndicator.className = 'status-text';
     btnStart.disabled = false;
@@ -202,6 +205,7 @@ function updateUI(state) {
     btnReset.disabled = true;
     winnerOverlay.classList.remove('active');
   } else if (state.status === 'active') {
+    verdictDismissed = false;
     statusIndicator.textContent = pollingTimer ? 'ACTIVE VOTING (POLLING)' : 'ACTIVE VOTING';
     statusIndicator.className = 'status-text status-active';
     btnStart.disabled = true;
@@ -241,19 +245,23 @@ function displayVerdict(winner, defVotes, prosVotes) {
 
   winnerCounts.textContent = `${defName.toUpperCase()}: ${defVotes} VOTES | ${prosName.toUpperCase()}: ${prosVotes} VOTES`;
   
-  setTimeout(() => {
-    winnerOverlay.classList.add('active');
-    if (audioEnabled) {
-      window.audio.playGavelSlam();
-      setTimeout(() => {
-        window.audio.playVictoryFanfare();
-      }, 550);
-    }
-    document.body.classList.add('shake-anim');
+  if (!verdictDismissed) {
     setTimeout(() => {
-      document.body.classList.remove('shake-anim');
-    }, 400);
-  }, 300);
+      if (!verdictDismissed) {
+        winnerOverlay.classList.add('active');
+        if (audioEnabled) {
+          window.audio.playGavelSlam();
+          setTimeout(() => {
+            window.audio.playVictoryFanfare();
+          }, 550);
+        }
+        document.body.classList.add('shake-anim');
+        setTimeout(() => {
+          document.body.classList.remove('shake-anim');
+        }, 400);
+      }
+    }, 300);
+  }
 }
 
 function handleIncomingVote(side, votes) {
@@ -314,8 +322,11 @@ function handleIncomingVote(side, votes) {
 async function postAdminCommand(endpoint) {
   try {
     if (endpoint === 'reset') {
+      verdictDismissed = false;
       latestState = null;
       localStorage.removeItem('courtroom_host_state');
+    } else if (endpoint === 'start') {
+      verdictDismissed = false;
     }
     const response = await fetch(`/api/admin/${endpoint}`, { method: 'POST' });
     const data = await response.json();
@@ -331,6 +342,7 @@ btnStart.addEventListener('click', () => {
 });
 
 btnEnd.addEventListener('click', () => {
+  verdictDismissed = false;
   postAdminCommand('end');
 });
 
@@ -340,8 +352,18 @@ btnReset.addEventListener('click', () => {
 });
 
 btnCloseVerdict.addEventListener('click', () => {
+  verdictDismissed = true;
   winnerOverlay.classList.remove('active');
 });
+
+if (btnResetVerdict) {
+  btnResetVerdict.addEventListener('click', () => {
+    verdictDismissed = false;
+    winnerOverlay.classList.remove('active');
+    postAdminCommand('reset');
+    if (audioEnabled) window.audio.playBeep();
+  });
+}
 
 async function saveBenchesNames() {
   const defText = defenseTitle.textContent.trim() || 'Defense';
