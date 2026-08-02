@@ -110,10 +110,16 @@ function startPollingFallback() {
 
 async function fetchState() {
   try {
+    const currentDefName = defenseTitle.textContent.trim() || 'Defense';
+    const currentProsName = prosecutionTitle.textContent.trim() || 'Prosecution';
     const res = await fetch('/api/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: currentStatus, votes: maxKnownVotes })
+      body: JSON.stringify({
+        status: currentStatus,
+        votes: maxKnownVotes,
+        names: { defense: currentDefName, prosecution: currentProsName }
+      })
     });
     if (res.ok) {
       const data = await res.json();
@@ -128,6 +134,9 @@ async function fetchState() {
           state.votes.defense = Math.max(maxKnownVotes.defense, state.votes.defense);
           state.votes.prosecution = Math.max(maxKnownVotes.prosecution, state.votes.prosecution);
         }
+
+        if (currentDefName !== 'Defense') state.names.defense = currentDefName;
+        if (currentProsName !== 'Prosecution') state.names.prosecution = currentProsName;
         
         if (lastKnownVotes.defense !== state.votes.defense && state.votes.defense > lastKnownVotes.defense) {
           handleIncomingVote('defense', state.votes);
@@ -322,6 +331,8 @@ async function postAdminCommand(endpoint) {
       lastKnownVotes = { defense: 0, prosecution: 0 };
       currentStatus = 'idle';
       latestState = null;
+      defenseTitle.textContent = 'Defense';
+      prosecutionTitle.textContent = 'Prosecution';
     } else if (endpoint === 'start') {
       verdictDismissed = false;
       currentStatus = 'active';

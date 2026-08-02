@@ -103,10 +103,19 @@ app.get('/api/state', async (req, res) => {
 });
 
 app.post('/api/sync', async (req, res) => {
-  const { status, votes } = req.body || {};
+  const { status, votes, names } = req.body || {};
   
   if (status === 'active' && pollState.status !== 'ended') {
     pollState.status = 'active';
+  }
+
+  if (names) {
+    if (names.defense && names.defense !== 'Defense') {
+      pollState.names.defense = names.defense;
+    }
+    if (names.prosecution && names.prosecution !== 'Prosecution') {
+      pollState.names.prosecution = names.prosecution;
+    }
   }
 
   if (pollState.status === 'active' && votes) {
