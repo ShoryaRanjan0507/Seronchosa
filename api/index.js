@@ -103,34 +103,6 @@ app.get('/api/state', async (req, res) => {
 });
 
 app.post('/api/sync', async (req, res) => {
-  const { status, names, votes, winner, lastVotedSide } = req.body || {};
-  
-  if (pollState.status === 'idle' && status && status === 'active') {
-    pollState.status = status;
-  }
-
-  if (winner && pollState.status === 'ended') {
-    pollState.winner = winner;
-  }
-
-  if (lastVotedSide) {
-    pollState.lastVotedSide = lastVotedSide;
-  }
-
-  if (names && pollState.status === 'active') {
-    if (names.defense) pollState.names.defense = names.defense;
-    if (names.prosecution) pollState.names.prosecution = names.prosecution;
-  }
-
-  if (votes && pollState.status !== 'idle') {
-    if (typeof votes.defense === 'number' && votes.defense > pollState.votes.defense) {
-      pollState.votes.defense = votes.defense;
-    }
-    if (typeof votes.prosecution === 'number' && votes.prosecution > pollState.votes.prosecution) {
-      pollState.votes.prosecution = votes.prosecution;
-    }
-  }
-
   const state = await getFullState(req);
   res.json({ success: true, state });
 });

@@ -24,7 +24,11 @@ const prosecutionPanel = document.getElementById('prosecutionPanel');
 const defenseTitle = document.getElementById('defenseTitle');
 const prosecutionTitle = document.getElementById('prosecutionTitle');
 
-let latestState = loadSavedState();
+let latestState = null;
+
+try {
+  localStorage.removeItem('courtroom_host_state');
+} catch (e) {}
 
 const objectionBubble = document.getElementById('objectionBubble');
 const bubbleText = document.getElementById('bubbleText');
@@ -36,29 +40,6 @@ const btnCloseVerdict = document.getElementById('btnCloseVerdict');
 const btnResetVerdict = document.getElementById('btnResetVerdict');
 
 let audioEnabled = false;
-
-function loadSavedState() {
-  try {
-    const saved = localStorage.getItem('courtroom_host_state');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed && parsed.status === 'active') {
-        return parsed;
-      }
-    }
-  } catch (e) {}
-  return null;
-}
-
-function saveStateLocally(state) {
-  try {
-    if (state && state.status === 'active') {
-      localStorage.setItem('courtroom_host_state', JSON.stringify(state));
-    } else {
-      localStorage.removeItem('courtroom_host_state');
-    }
-  } catch (e) {}
-}
 
 audioToggle.addEventListener('click', () => {
   audioEnabled = !audioEnabled;
@@ -93,7 +74,7 @@ function connectWebSocket() {
         clearInterval(pollingTimer);
         pollingTimer = null;
       }
-      syncStateWithServer();
+      fetchState();
     };
 
     socket.onmessage = (event) => {
@@ -121,38 +102,22 @@ function startPollingFallback() {
   statusIndicator.textContent = 'CONNECTED (POLLING)';
   statusIndicator.className = 'status-text';
   if (!pollingTimer) {
-    syncStateWithServer();
-    pollingTimer = setInterval(syncStateWithServer, 1500);
+    fetchState();
+    pollingTimer = setInterval(fetchState, 1500);
   }
 }
 
-async function syncStateWithServer() {
+async function fetchState() {
   try {
-    const payload = (latestState && latestState.status === 'active') ? {
-      status: latestState.status,
-      names: latestState.names,
-      votes: latestState.votes,
-      winner: latestState.winner,
-      lastVotedSide: latestState.lastVotedSide
-    } : {};
-
-    const res = await fetch('/api/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
+    const res = await fetch('/api/state');
     if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.state) {
-        const state = data.state;
-        if (lastKnownVotes.defense !== state.votes.defense) {
-          handleIncomingVote('defense', state.votes);
-        } else if (lastKnownVotes.prosecution !== state.votes.prosecution) {
-          handleIncomingVote('prosecution', state.votes);
-        } else {
-          updateUI(state);
-        }
+      const state = await res.json();
+      if (lastKnownVotes.defense !== state.votes.defense) {
+        handleIncomingVote('defense', state.votes);
+      } else if (lastKnownVotes.prosecution !== state.votes.prosecution) {
+        handleIncomingVote('prosecution', state.votes);
+      } else {
+        updateUI(state);
       }
     }
   } catch (e) {}
@@ -160,7 +125,6 @@ async function syncStateWithServer() {
 
 function updateUI(state) {
   latestState = state;
-  saveStateLocally(state);
   currentStatus = state.status;
   
   const defVotes = state.votes.defense;
@@ -324,7 +288,6 @@ async function postAdminCommand(endpoint) {
     if (endpoint === 'reset') {
       verdictDismissed = false;
       latestState = null;
-      localStorage.removeItem('courtroom_host_state');
     } else if (endpoint === 'start') {
       verdictDismissed = false;
     }
@@ -401,8 +364,6 @@ async function initPageLoadState() {
     if (res.ok) {
       const state = await res.json();
       if (state.status === 'idle' || state.status === 'ended') {
-        latestState = null;
-        localStorage.removeItem('courtroom_host_state');
         await fetch('/api/admin/reset', { method: 'POST' });
         const freshRes = await fetch('/api/state');
         const freshState = await freshRes.json();
