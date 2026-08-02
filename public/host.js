@@ -28,7 +28,7 @@ let latestState = null;
 
 try {
   localStorage.removeItem('courtroom_host_state');
-} catch (e) {}
+} catch (e) { }
 
 const objectionBubble = document.getElementById('objectionBubble');
 const bubbleText = document.getElementById('bubbleText');
@@ -120,34 +120,34 @@ async function fetchState() {
         updateUI(state);
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function updateUI(state) {
   latestState = state;
   currentStatus = state.status;
-  
+
   const defVotes = state.votes.defense;
   const prosVotes = state.votes.prosecution;
   lastKnownVotes = { defense: defVotes, prosecution: prosVotes };
-  
+
   const total = defVotes + prosVotes;
-  
+
   defenseCount.textContent = defVotes;
   prosecutionCount.textContent = prosVotes;
-  
+
   let defPct = 50;
   let prosPct = 50;
   if (total > 0) {
     defPct = Math.round((defVotes / total) * 100);
     prosPct = 100 - defPct;
   }
-  
+
   defensePercent.textContent = `${defPct}%`;
   prosecutionPercent.textContent = `${prosPct}%`;
   defenseBar.style.width = `${defPct}%`;
   prosecutionBar.style.width = `${prosPct}%`;
-  
+
   if (state.qrCode) qrImage.src = state.qrCode;
   if (state.voteUrl) voteLink.textContent = state.voteUrl;
 
@@ -162,7 +162,7 @@ function updateUI(state) {
 
   if (state.status === 'idle') {
     verdictDismissed = false;
-    statusIndicator.textContent = pollingTimer ? 'COURT IN SESSION (POLLING)' : 'COURT IN SESSION';
+    statusIndicator.textContent = pollingTimer ? 'ADJOURNED (NOT POLLING)' : 'ADJOURNED';
     statusIndicator.className = 'status-text';
     btnStart.disabled = false;
     btnEnd.disabled = true;
@@ -208,7 +208,7 @@ function displayVerdict(winner, defVotes, prosVotes) {
   }
 
   winnerCounts.textContent = `${defName.toUpperCase()}: ${defVotes} VOTES | ${prosName.toUpperCase()}: ${prosVotes} VOTES`;
-  
+
   if (!verdictDismissed) {
     setTimeout(() => {
       if (!verdictDismissed) {
@@ -232,19 +232,19 @@ function handleIncomingVote(side, votes) {
   const defVotes = votes.defense;
   const prosVotes = votes.prosecution;
   lastKnownVotes = { defense: defVotes, prosecution: prosVotes };
-  
+
   const total = defVotes + prosVotes;
-  
+
   defenseCount.textContent = defVotes;
   prosecutionCount.textContent = prosVotes;
-  
+
   let defPct = 50;
   let prosPct = 50;
   if (total > 0) {
     defPct = Math.round((defVotes / total) * 100);
     prosPct = 100 - defPct;
   }
-  
+
   defensePercent.textContent = `${defPct}%`;
   prosecutionPercent.textContent = `${prosPct}%`;
   defenseBar.style.width = `${defPct}%`;
@@ -259,21 +259,21 @@ function handleIncomingVote(side, votes) {
   const shouts = ['OBJECTION!', 'HOLD IT!', 'TAKE THAT!'];
   const randomShout = shouts[Math.floor(Math.random() * shouts.length)];
   bubbleText.textContent = randomShout;
-  
+
   if (side === 'defense') {
     bubbleText.style.color = '#ff3c00';
   } else {
     bubbleText.style.color = '#7e17c2';
   }
-  
+
   objectionBubble.classList.add('active');
-  
+
   if (audioEnabled) {
     window.audio.playObjection();
   }
 
   document.body.classList.add('shake-anim');
-  
+
   setTimeout(() => {
     objectionBubble.classList.remove('active');
   }, 800);
@@ -296,7 +296,7 @@ async function postAdminCommand(endpoint) {
     if (data.success) {
       updateUI(data.state);
     }
-  } catch (error) {}
+  } catch (error) { }
 }
 
 btnStart.addEventListener('click', () => {
@@ -343,7 +343,7 @@ async function saveBenchesNames() {
     if (data.success) {
       updateUI(data.state);
     }
-  } catch (error) {}
+  } catch (error) { }
 }
 
 function handleNameEditKeydown(e) {
@@ -372,7 +372,7 @@ async function initPageLoadState() {
       }
       updateUI(state);
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 initPageLoadState();
