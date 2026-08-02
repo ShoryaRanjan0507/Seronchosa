@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Courtroom Voting Panel</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body style="min-height: 100vh; overflow-y: auto;">
+  <div class="courtroom-bg"></div>
+  <div class="stripes-overlay"></div>
+
+  <div id="objectionBubble" class="objection-bubble" style="padding: 20px 40px;">
+    <span id="bubbleText" style="font-size: 2rem;">OBJECTION!</span>
+  </div>
+
+  <div class="mobile-layout">
+    <header class="card-panel mobile-header glass">
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <h2 class="pixel-text" style="font-size: 0.8rem; margin: 0;">COURT VOTE PANEL</h2>
+        <button id="audioToggle" class="btn-pixel" style="padding: 4px 8px; font-size: 0.55rem; margin: 0; min-width: 90px;">
+          🔇 SFX OFF
+        </button>
+      </div>
+    </header>
+
+    <main class="mobile-main">
+      <div id="votingInterface" style="display: flex; flex-direction: column; gap: 15px; flex: 1; width: 100%;">
+        <div class="pixel-text" style="font-size: 0.6rem; text-align: center; color: #888; margin-bottom: 5px;">
+          TAP A BENCH TO SUBMIT YOUR PLEA
+        </div>
+
+        <div id="btnVoteDefense" class="vote-btn-container btn-defense">
+          <div class="btn-silhouette">
+            <svg viewBox="0 0 100 100" width="100%" height="100%" fill="var(--defense-color)">
+              <path d="M10,95 L20,70 L25,50 L20,35 L28,25 L35,28 L32,15 L38,10 L45,18 L48,15 L53,22 L55,20 L58,25 L55,30 L58,35 L62,38 L65,30 L75,28 L85,32 L95,30 L92,38 L82,42 L72,42 L65,45 L58,45 L50,55 L45,65 L48,80 L52,95 Z" opacity="0.15" />
+            </svg>
+          </div>
+          <div class="btn-label-box">
+            <div>
+              <h3 id="defenseRoleTitle" class="btn-role-title">Defense</h3>
+              <div class="btn-tagline">DEFEND THE ACCUSED</div>
+            </div>
+            <span class="btn-action-text">PLEAD</span>
+          </div>
+        </div>
+
+        <div id="btnVoteProsecution" class="vote-btn-container btn-prosecution">
+          <div class="btn-silhouette">
+            <svg viewBox="0 0 100 100" width="100%" height="100%" fill="var(--prosecution-color)">
+              <path d="M90,95 L80,70 L75,50 L80,35 L72,25 L65,28 L68,15 L62,10 L55,18 L52,15 L47,22 L45,20 L42,25 L45,30 L42,35 L38,38 L30,40 L20,40 L12,43 L8,48 L15,50 L25,48 L35,46 L42,46 L50,55 L55,65 L52,80 L48,95 Z" opacity="0.15" />
+            </svg>
+          </div>
+          <div class="btn-label-box" style="flex-direction: row-reverse; text-align: right;">
+            <div>
+              <h3 id="prosecutionRoleTitle" class="btn-role-title">Prosecution</h3>
+              <div class="btn-tagline">DEMAND THE VERDICT</div>
+            </div>
+            <span class="btn-action-text">INDITE</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="lockScreen" class="card-panel glass lock-screen">
+        <div class="status-box">
+          <div class="pixel-text" style="color: var(--gold); font-size: 0.9rem;">OBJECTION SUBMITTED!</div>
+          <div class="spinner-court"></div>
+          <p id="lockStatusMsg" class="lock-msg">YOUR PLEA HAS BEEN FILED</p>
+          <p class="lock-submsg">The court is currently deliberating. Stand by for the Judge's gavel...</p>
+        </div>
+      </div>
+
+      <div id="mobileWinnerPanel" class="card-panel glass mobile-winner-panel">
+        <div class="pixel-text" style="font-size: 0.9rem; color: var(--gold); margin-bottom: 15px;">FINAL JUDGMENT</div>
+        <div id="mobileVerdictStamp" class="verdict-stamp" style="font-size: 2.2rem; margin-bottom: 20px;">GUILTY</div>
+        <div id="mobileWinnerName" class="winner-details" style="font-size: 1.1rem; margin-top: 0;">PROSECUTION WINS!</div>
+        <div id="mobileWinnerCounts" class="winner-subdetails" style="font-size: 0.65rem;">DEFENSE: 0 | PROSECUTION: 0</div>
+      </div>
+    </main>
+
+    <footer class="footer-credit">
+      COURT IN SESSION
+    </footer>
+  </div>
+
+  <script src="shared.js"></script>
+  <script src="vote.js"></script>
+</body>
+</html>

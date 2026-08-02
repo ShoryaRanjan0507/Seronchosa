@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anime Courtroom Event - Live Poll</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="courtroom-bg"></div>
+  <div class="stripes-overlay"></div>
+
+  <div id="objectionBubble" class="objection-bubble">
+    <span id="bubbleText">OBJECTION!</span>
+  </div>
+
+  <div class="host-layout">
+    <header class="card-panel host-header glass">
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="var(--gold)">
+          <path d="M9 22H15V20H9V22M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.52 2 12 2M12 20C7.59 20 4 16.41 4 12S7.59 4 12 4 20 7.59 20 12 16.41 20 12 20M15.5 11V13H17V11H15.5M7 11H8.5V13H7V11M9.5 8H14.5C14.78 8 15 8.22 15 8.5V9.5C15 9.78 14.78 10 14.5 10H9.5C9.22 10 9 9.78 9 9.5V8.5C9 8.22 9.22 8 9.5 8M10 14.5V16H14V14.5C14 14.22 13.78 14 13.5 14H10.5C10.22 14 10 14.22 10 14.5Z" />
+        </svg>
+        <h1 class="pixel-text">COURTROOM DEBATE POLL</h1>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div id="audioToggle" class="btn-pixel" style="padding: 6px 12px; font-size: 0.6rem;">
+          🔊 SOUND ON
+        </div>
+        <div class="admin-status-bar">
+          STATUS: <span id="statusIndicator" class="status-text">CONNECTING...</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="host-main">
+      <section id="defensePanel" class="card-panel court-side side-defense">
+        <div class="character-silhouette">
+          <svg viewBox="0 0 100 100" width="100%" height="100%" fill="var(--defense-color)">
+            <path d="M10,95 L20,70 L25,50 L20,35 L28,25 L35,28 L32,15 L38,10 L45,18 L48,15 L53,22 L55,20 L58,25 L55,30 L58,35 L62,38 L65,30 L75,28 L85,32 L95,30 L92,38 L82,42 L72,42 L65,45 L58,45 L50,55 L45,65 L48,80 L52,95 Z" opacity="0.8" />
+            <path d="M58,35 L65,30 L80,26 L90,26 L95,30 L90,34 L80,34 L72,37 L65,42 Z" opacity="1" />
+          </svg>
+        </div>
+
+        <div class="side-header">
+          <h2 id="defenseTitle" class="side-title" contenteditable="true" spellcheck="false" title="Click to edit name">Defense</h2>
+          <span id="defensePercent" class="pixel-text glow-defense" style="font-size: 1.5rem;">50%</span>
+        </div>
+
+        <div style="z-index: 2; margin-top: auto;">
+          <div class="pixel-text" style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">VOTE COUNT</div>
+          <div id="defenseCount" class="side-count pixel-text glow-defense">0</div>
+        </div>
+      </section>
+
+      <section class="card-panel center-panel">
+        <div>
+          <div class="pixel-text" style="font-size: 0.8rem; color: var(--gold); margin-top: 10px;">VOTING QR CODE</div>
+          <div class="qr-box">
+            <img id="qrImage" src="" alt="Scan to Vote">
+          </div>
+          <div class="qr-instruction">Scan to cast your vote!</div>
+          <div id="voteLink" class="vote-link-text">http://localhost:3000/vote.html</div>
+        </div>
+
+        <div class="admin-controls">
+          <div class="pixel-text" style="font-size: 0.65rem; color: #666; margin-bottom: 5px;">JUDGE'S BENCH CONTROLS</div>
+          <button id="btnStart" class="btn-pixel" style="background: #2e7d32; border-color: #1b5e20;">
+            START COURT POLL
+          </button>
+          <button id="btnEnd" class="btn-pixel" style="background: #c62828; border-color: #b71c1c;">
+            CLOSE POLL & VERDICT
+          </button>
+          <button id="btnReset" class="btn-pixel" style="background: #37474f; border-color: #263238;">
+            RESET COURTROOM
+          </button>
+        </div>
+      </section>
+
+      <section id="prosecutionPanel" class="card-panel court-side side-prosecution">
+        <div class="character-silhouette">
+          <svg viewBox="0 0 100 100" width="100%" height="100%" fill="var(--prosecution-color)">
+            <path d="M90,95 L80,70 L75,50 L80,35 L72,25 L65,28 L68,15 L62,10 L55,18 L52,15 L47,22 L45,20 L42,25 L45,30 L42,35 L38,38 L30,40 L20,40 L12,43 L8,48 L15,50 L25,48 L35,46 L42,46 L50,55 L55,65 L52,80 L48,95 Z" opacity="0.8" />
+            <path d="M42,35 L30,40 L15,42 L5,42 L2,46 L8,48 L22,48 L32,46 L38,44 Z" opacity="1" />
+          </svg>
+        </div>
+
+        <div class="side-header" style="flex-direction: row-reverse;">
+          <h2 id="prosecutionTitle" class="side-title" contenteditable="true" spellcheck="false" title="Click to edit name">Prosecution</h2>
+          <span id="prosecutionPercent" class="pixel-text glow-prosecution" style="font-size: 1.5rem;">50%</span>
+        </div>
+
+        <div style="z-index: 2; margin-top: auto; text-align: right;">
+          <div class="pixel-text" style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">VOTE COUNT</div>
+          <div id="prosecutionCount" class="side-count pixel-text glow-prosecution">0</div>
+        </div>
+      </section>
+
+    </main>
+
+    <div class="card-panel glass gauge-container">
+      <div class="vs-badge">
+        <span>VS</span>
+      </div>
+      <div class="court-bar-wrapper">
+        <div id="defenseBar" class="bar-segment bar-defense" style="width: 50%;"></div>
+        <div id="prosecutionBar" class="bar-segment bar-prosecution" style="width: 50%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="winnerOverlay" class="winner-overlay">
+    <div class="winner-banner">
+      <div class="pixel-text" style="font-size: 1.5rem; color: var(--gold); margin-bottom: 10px;">THE COURT HAS DECIDED</div>
+      <div id="verdictStamp" class="verdict-stamp">GUILTY</div>
+      <div id="winnerName" class="winner-details">PROSECUTION WINS!</div>
+      <div id="winnerCounts" class="winner-subdetails">PROSECUTION: 10 VOTES vs DEFENSE: 5 VOTES</div>
+
+      <button id="btnCloseVerdict" class="btn-pixel" style="margin-top: 40px; border-color: var(--gold);">
+        RETURN TO COURTROOM
+      </button>
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script src="host.js"></script>
+</body>
+</html>
