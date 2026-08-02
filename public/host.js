@@ -189,10 +189,10 @@ function updateUI(state) {
 
   if (state.names) {
     if (document.activeElement !== defenseTitle) {
-      defenseTitle.textContent = state.names.defense;
+      defenseTitle.textContent = state.names.defense || 'Defense';
     }
     if (document.activeElement !== prosecutionTitle) {
-      prosecutionTitle.textContent = state.names.prosecution;
+      prosecutionTitle.textContent = state.names.prosecution || 'Prosecution';
     }
   }
 
@@ -395,8 +395,24 @@ defenseTitle.addEventListener('keydown', handleNameEditKeydown);
 prosecutionTitle.addEventListener('blur', saveBenchesNames);
 prosecutionTitle.addEventListener('keydown', handleNameEditKeydown);
 
-if (latestState) {
-  updateUI(latestState);
+async function initPageLoadState() {
+  try {
+    const res = await fetch('/api/state');
+    if (res.ok) {
+      const state = await res.json();
+      if (state.status === 'idle' || state.status === 'ended') {
+        latestState = null;
+        localStorage.removeItem('courtroom_host_state');
+        await fetch('/api/admin/reset', { method: 'POST' });
+        const freshRes = await fetch('/api/state');
+        const freshState = await freshRes.json();
+        updateUI(freshState);
+        return;
+      }
+      updateUI(state);
+    }
+  } catch (e) {}
 }
 
+initPageLoadState();
 connectWebSocket();

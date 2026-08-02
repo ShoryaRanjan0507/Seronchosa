@@ -117,7 +117,7 @@ app.post('/api/sync', async (req, res) => {
     pollState.lastVotedSide = lastVotedSide;
   }
 
-  if (names) {
+  if (names && pollState.status === 'active') {
     if (names.defense) pollState.names.defense = names.defense;
     if (names.prosecution) pollState.names.prosecution = names.prosecution;
   }
@@ -163,8 +163,10 @@ app.post('/api/admin/reset', async (req, res) => {
   pollState.votes.defense = 0;
   pollState.winner = null;
   pollState.lastVotedSide = null;
-  pollState.names.defense = 'Defense';
-  pollState.names.prosecution = 'Prosecution';
+  pollState.names = {
+    defense: 'Defense',
+    prosecution: 'Prosecution'
+  };
   votedSessions.clear();
   votedIPs.clear();
   const state = await getFullState(req);
