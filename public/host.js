@@ -23,7 +23,7 @@ const prosecutionPanel = document.getElementById('prosecutionPanel');
 const defenseTitle = document.getElementById('defenseTitle');
 const prosecutionTitle = document.getElementById('prosecutionTitle');
 
-let latestState = null;
+let latestState = loadSavedState();
 
 const objectionBubble = document.getElementById('objectionBubble');
 const bubbleText = document.getElementById('bubbleText');
@@ -34,6 +34,25 @@ const winnerCounts = document.getElementById('winnerCounts');
 const btnCloseVerdict = document.getElementById('btnCloseVerdict');
 
 let audioEnabled = false;
+
+function loadSavedState() {
+  try {
+    const saved = localStorage.getItem('courtroom_host_state');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return null;
+}
+
+function saveStateLocally(state) {
+  try {
+    if (state && state.status !== 'idle') {
+      localStorage.setItem('courtroom_host_state', JSON.stringify(state));
+    } else if (state && state.status === 'idle') {
+      localStorage.removeItem('courtroom_host_state');
+    }
+  } catch (e) {}
+}
+
 audioToggle.addEventListener('click', () => {
   audioEnabled = !audioEnabled;
   if (audioEnabled) {
@@ -67,6 +86,7 @@ function connectWebSocket() {
         clearInterval(pollingTimer);
         pollingTimer = null;
       }
+      syncStateWithServer();
     };
 
     socket.onmessage = (event) => {
@@ -94,22 +114,37 @@ function startPollingFallback() {
   statusIndicator.textContent = 'CONNECTED (POLLING)';
   statusIndicator.className = 'status-text';
   if (!pollingTimer) {
-    fetchStatePolling();
-    pollingTimer = setInterval(fetchStatePolling, 1500);
+    syncStateWithServer();
+    pollingTimer = setInterval(syncStateWithServer, 1500);
   }
 }
 
-async function fetchStatePolling() {
+async function syncStateWithServer() {
   try {
-    const res = await fetch('/api/state');
+    const payload = latestState ? {
+      status: latestState.status,
+      names: latestState.names,
+      votes: latestState.votes,
+      winner: latestState.winner
+    } : {};
+
+    const res = await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
     if (res.ok) {
-      const state = await res.json();
-      if (lastKnownVotes.defense !== state.votes.defense) {
-        handleIncomingVote('defense', state.votes);
-      } else if (lastKnownVotes.prosecution !== state.votes.prosecution) {
-        handleIncomingVote('prosecution', state.votes);
-      } else {
-        updateUI(state);
+      const data = await res.json();
+      if (data.success && data.state) {
+        const state = data.state;
+        if (lastKnownVotes.defense !== state.votes.defense) {
+          handleIncomingVote('defense', state.votes);
+        } else if (lastKnownVotes.prosecution !== state.votes.prosecution) {
+          handleIncomingVote('prosecution', state.votes);
+        } else {
+          updateUI(state);
+        }
       }
     }
   } catch (e) {}
@@ -117,6 +152,7 @@ async function fetchStatePolling() {
 
 function updateUI(state) {
   latestState = state;
+  saveStateLocally(state);
   currentStatus = state.status;
   
   const defVotes = state.votes.defense;
@@ -274,6 +310,10 @@ async function postAdminCommand(endpoint) {
     const response = await fetch(`/api/admin/${endpoint}`, { method: 'POST' });
     const data = await response.json();
     if (data.success) {
+      if (endpoint === 'reset') {
+        latestState = null;
+        localStorage.removeItem('courtroom_host_state');
+      }
       updateUI(data.state);
     }
   } catch (error) {}
@@ -326,5 +366,9 @@ defenseTitle.addEventListener('blur', saveBenchesNames);
 defenseTitle.addEventListener('keydown', handleNameEditKeydown);
 prosecutionTitle.addEventListener('blur', saveBenchesNames);
 prosecutionTitle.addEventListener('keydown', handleNameEditKeydown);
+
+if (latestState) {
+  updateUI(latestState);
+}
 
 connectWebSocket();
