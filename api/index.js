@@ -55,30 +55,36 @@ function getLocalIP() {
 }
 
 const LOCAL_IP = getLocalIP();
-const VOTE_URL = `http://${LOCAL_IP}:${PORT}/vote.html`;
 
-let qrCodeDataURL = '';
-QRCode.toDataURL(VOTE_URL, { margin: 2, scale: 8 }, (err, url) => {
-  if (!err) {
-    qrCodeDataURL = url;
+function getVoteUrl(req) {
+  if (req && req.headers && req.headers.host) {
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    return `${protocol}://${req.headers.host}/vote.html`;
   }
-});
+  return `http://${LOCAL_IP}:${PORT}/vote.html`;
+}
+
+async function getFullState(req) {
+  const voteUrl = getVoteUrl(req);
+  let qrCode = '';
+  try {
+    qrCode = await QRCode.toDataURL(voteUrl, { margin: 2, scale: 8 });
+  } catch (e) {}
+
+  return {
+    ...pollState,
+    voteUrl: voteUrl,
+    localIp: LOCAL_IP,
+    qrCode: qrCode
+  };
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-function getFullState() {
-  return {
-    ...pollState,
-    voteUrl: VOTE_URL,
-    localIp: LOCAL_IP,
-    qrCode: qrCodeDataURL
-  };
-}
-
-function broadcast(data) {
+async function broadcast(data, req) {
   if (data.type === 'state') {
-    data.state = getFullState();
+    data.state = await getFullState(req);
   }
   const message = JSON.stringify(data);
   if (wss) {
@@ -90,17 +96,19 @@ function broadcast(data) {
   }
 }
 
-app.get('/api/state', (req, res) => {
-  res.json(getFullState());
+app.get('/api/state', async (req, res) => {
+  const state = await getFullState(req);
+  res.json(state);
 });
 
-app.post('/api/admin/start', (req, res) => {
+app.post('/api/admin/start', async (req, res) => {
   pollState.status = 'active';
-  broadcast({ type: 'state', state: getFullState() });
-  res.json({ success: true, state: getFullState() });
+  const state = await getFullState(req);
+  broadcast({ type: 'state', state });
+  res.json({ success: true, state });
 });
 
-app.post('/api/admin/end', (req, res) => {
+app.post('/api/admin/end', async (req, res) => {
   pollState.status = 'ended';
   const { prosecution, defense } = pollState.votes;
   if (prosecution > defense) {
@@ -110,11 +118,12 @@ app.post('/api/admin/end', (req, res) => {
   } else {
     pollState.winner = 'draw';
   }
-  broadcast({ type: 'state', state: getFullState() });
-  res.json({ success: true, state: getFullState() });
+  const state = await getFullState(req);
+  broadcast({ type: 'state', state });
+  res.json({ success: true, state });
 });
 
-app.post('/api/admin/reset', (req, res) => {
+app.post('/api/admin/reset', async (req, res) => {
   pollState.status = 'idle';
   pollState.votes.prosecution = 0;
   pollState.votes.defense = 0;
@@ -123,16 +132,18 @@ app.post('/api/admin/reset', (req, res) => {
   pollState.names.prosecution = 'Prosecution';
   votedSessions.clear();
   votedIPs.clear();
-  broadcast({ type: 'state', state: getFullState() });
-  res.json({ success: true, state: getFullState() });
+  const state = await getFullState(req);
+  broadcast({ type: 'state', state });
+  res.json({ success: true, state });
 });
 
-app.post('/api/admin/names', (req, res) => {
+app.post('/api/admin/names', async (req, res) => {
   const { defense, prosecution } = req.body;
   if (defense) pollState.names.defense = defense;
   if (prosecution) pollState.names.prosecution = prosecution;
-  broadcast({ type: 'state', state: getFullState() });
-  res.json({ success: true, state: getFullState() });
+  const state = await getFullState(req);
+  broadcast({ type: 'state', state });
+  res.json({ success: true, state });
 });
 
 app.post('/api/vote', (req, res) => {
@@ -159,14 +170,15 @@ app.post('/api/vote', (req, res) => {
     type: 'vote_cast',
     votes: pollState.votes,
     side: side
-  });
+  }, req);
 
   res.json({ success: true, votes: pollState.votes });
 });
 
 if (wss) {
-  wss.on('connection', (ws) => {
-    ws.send(JSON.stringify({ type: 'state', state: getFullState() }));
+  wss.on('connection', async (ws) => {
+    const state = await getFullState();
+    ws.send(JSON.stringify({ type: 'state', state }));
   });
 }
 
