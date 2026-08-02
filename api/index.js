@@ -104,20 +104,25 @@ app.get('/api/state', async (req, res) => {
 
 app.post('/api/sync', async (req, res) => {
   const { status, names, votes, winner, lastVotedSide } = req.body || {};
-  if (status && status !== 'idle') {
+  
+  if (pollState.status === 'idle' && status && status === 'active') {
     pollState.status = status;
   }
-  if (winner) {
+
+  if (winner && pollState.status === 'ended') {
     pollState.winner = winner;
   }
+
   if (lastVotedSide) {
     pollState.lastVotedSide = lastVotedSide;
   }
+
   if (names) {
     if (names.defense) pollState.names.defense = names.defense;
     if (names.prosecution) pollState.names.prosecution = names.prosecution;
   }
-  if (votes) {
+
+  if (votes && pollState.status !== 'idle') {
     if (typeof votes.defense === 'number' && votes.defense > pollState.votes.defense) {
       pollState.votes.defense = votes.defense;
     }
@@ -125,6 +130,7 @@ app.post('/api/sync', async (req, res) => {
       pollState.votes.prosecution = votes.prosecution;
     }
   }
+
   const state = await getFullState(req);
   res.json({ success: true, state });
 });

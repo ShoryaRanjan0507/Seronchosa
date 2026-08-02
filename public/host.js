@@ -38,16 +38,21 @@ let audioEnabled = false;
 function loadSavedState() {
   try {
     const saved = localStorage.getItem('courtroom_host_state');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.status === 'active') {
+        return parsed;
+      }
+    }
   } catch (e) {}
   return null;
 }
 
 function saveStateLocally(state) {
   try {
-    if (state && state.status !== 'idle') {
+    if (state && state.status === 'active') {
       localStorage.setItem('courtroom_host_state', JSON.stringify(state));
-    } else if (state && state.status === 'idle') {
+    } else {
       localStorage.removeItem('courtroom_host_state');
     }
   } catch (e) {}
@@ -121,7 +126,7 @@ function startPollingFallback() {
 
 async function syncStateWithServer() {
   try {
-    const payload = latestState ? {
+    const payload = (latestState && latestState.status === 'active') ? {
       status: latestState.status,
       names: latestState.names,
       votes: latestState.votes,
@@ -308,13 +313,13 @@ function handleIncomingVote(side, votes) {
 
 async function postAdminCommand(endpoint) {
   try {
+    if (endpoint === 'reset') {
+      latestState = null;
+      localStorage.removeItem('courtroom_host_state');
+    }
     const response = await fetch(`/api/admin/${endpoint}`, { method: 'POST' });
     const data = await response.json();
     if (data.success) {
-      if (endpoint === 'reset') {
-        latestState = null;
-        localStorage.removeItem('courtroom_host_state');
-      }
       updateUI(data.state);
     }
   } catch (error) {}
